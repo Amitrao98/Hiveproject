@@ -1,0 +1,194 @@
+For Dataset 1
+
+1.Create a schema based on the given dataset:
+
+CREATE TABLE IF NOT EXISTS ineuron_consultant_team (
+    chat_date STRING,
+    chat_id INT,
+    agent STRING,
+    visitor_id INT,
+    rating INT,
+    feedback STRING,
+    query_handled STRING,
+    response_time INT,
+    resolution_time INT,
+    chat_duration INT,
+    contribution_hour INT
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+
+
+2. Dump the data inside the HDFS in the given schema location:
+
+INSERT OVERWRITE DIRECTORY 'AgentLogingReport.csv'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT *
+FROM ineuron_consultant_team;
+
+3.List of all agents' names:
+
+SELECT DISTINCT agent
+FROM ineuron_consultant_team;
+
+4.Find out agent average rating:
+
+SELECT agent, AVG(rating) AS avg_rating
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+5. Total working days for each agent:
+
+SELECT agent, COUNT(DISTINCT chat_date) AS total_working_days
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+6.Total queries that each agent has taken:
+
+SELECT agent, COUNT(DISTINCT chat_id) AS total_queries
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+7.Total feedback that each agent has received:
+
+SELECT agent, COUNT(DISTINCT feedback) AS total_feedback
+FROM ineuron_consultant_team
+WHERE feedback IS NOT NULL
+GROUP BY agent;
+
+8.Agent name who has an average rating between 3.5 to 4:
+
+SELECT agent, AVG(rating) AS avg_rating
+FROM ineuron_consultant_team
+GROUP BY agent
+HAVING avg_rating BETWEEN 3.5 AND 4;
+
+9.Agent name who has a rating less than 3.5:
+
+SELECT agent, AVG(rating) AS avg_rating
+FROM ineuron_consultant_team
+GROUP BY agent
+HAVING avg_rating < 3.5;
+
+10.Agent name who has a rating more than 4.5:
+
+SELECT agent, AVG(rating) AS avg_rating
+FROM ineuron_consultant_team
+GROUP BY agent
+HAVING avg_rating > 4.5;
+
+11.How many feedback agents have received more than 4.5 average:
+
+SELECT COUNT(DISTINCT agent) AS agents_with_high_rating
+FROM ineuron_consultant_team
+WHERE rating > 4.5 AND feedback IS NOT NULL;
+
+12.Average weekly response time for each agent:
+
+SELECT agent, AVG(response_time) AS avg_response_time
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+13.Average weekly resolution time for each agent:
+
+SELECT agent, AVG(resolution_time) AS avg_resolution_time
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+14.Find the number of chat on which they have received a feedback:
+
+SELECT agent, COUNT(DISTINCT chat_id) AS chats_with_feedback
+FROM ineuron_consultant_team
+WHERE feedback IS NOT NULL
+GROUP BY agent;
+
+15.Total contribution hour for each and every agent's weekly basis:
+
+SELECT agent, SUM(contribution_hour) AS total_contribution_hour
+FROM ineuron_consultant_team
+GROUP BY agent;
+
+16.Perform inner join, left join, and right join based on the agent column and after joining the table export that data into your local system:
+Assuming that you have two tables named table1 and table2 with an agent column, you can perform inner join, left join, and right join as follows:
+
+-- Inner join
+SELECT *
+FROM table1
+INNER JOIN table2 ON table1.agent = table2.agent;
+
+-- Left join
+SELECT *
+FROM table1
+LEFT JOIN table2 ON table1.agent = table2.agent;
+
+-- Right join
+SELECT *
+FROM table1
+RIGHT JOIN table2 ON table1.agent = table2.agent;
+
+
+To export the joined table data into your local system, you can use the following commands:
+
+-- Export data from the inner join
+INSERT OVERWRITE LOCAL DIRECTORY '/path/to/local/system'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT *
+FROM (SELECT * FROM table1 INNER JOIN table2 ON table1.agent = table2.agent) AS t;
+
+-- Export data from the left join
+INSERT OVERWRITE LOCAL DIRECTORY '/path/to/local/system'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT *
+FROM (SELECT * FROM table1 LEFT JOIN table2 ON table1.agent = table2.agent) AS t;
+
+-- Export data from the right join
+INSERT OVERWRITE LOCAL DIRECTORY '/path/to/local/system'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+SELECT *
+FROM (SELECT * FROM table1 RIGHT JOIN table2 ON table1.agent = table2.agent) AS t;
+
+
+17.Perform partitioning on top of the agent column and then on top of that perform bucketing for each partitioning:
+Assuming that you have already created the ineuron_consultant_team table, you can partition the table based on the agent column and then perform bucketing as follows:
+
+-- Create a partitioned table
+CREATE TABLE IF NOT EXISTS ineuron_consultant_team_partitioned (
+    chat_date STRING,
+    chat_id INT,
+    visitor_id INT,
+    rating INT,
+    feedback STRING,
+    query_handled STRING,
+    response_time INT,
+    resolution_time INT,
+    chat_duration INT,
+    contribution_hour INT
+)
+PARTITIONED BY (agent STRING)
+CLUSTERED BY (chat_id) INTO 4 BUCKETS
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS ORC;
+
+-- Insert data into the partitioned table
+INSERT OVERWRITE TABLE ineuron_consultant_team_partitioned PARTITION (agent)
+SELECT chat_date, chat_id, visitor_id, rating, feedback, query_handled, response_time, resolution_time, chat_duration, contribution_hour, agent
+FROM ineuron_consultant_team;
+
+-- Retrieve data from a specific partition
+SELECT *
+FROM ineuron_consultant_team_partitioned
+WHERE agent = 'agent_name';
+
+-- Add a new partition to the partitioned table
+ALTER TABLE ineuron_consultant_team_partitioned ADD PARTITION (agent='new_agent_name');
+
+
+
+
+
